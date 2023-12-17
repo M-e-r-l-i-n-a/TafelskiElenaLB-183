@@ -37,7 +37,8 @@ namespace M183.Controllers
             }
 
             string sql = string.Format("SELECT * FROM Users WHERE username = '{0}' AND password = '{1}'", 
-                request.Username, 
+                // Escaping zur Verhinderung von SQL-Interpreter-Injection
+                request.Username.Replace("'", "/'"), 
                 MD5Helper.ComputeMD5Hash(request.Password));
 
             User? user= _context.Users.FromSqlRaw(sql).FirstOrDefault();
