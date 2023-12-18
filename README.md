@@ -4,7 +4,12 @@
 Dieses ePortfolio dient dazu, meine Kompetenzen im Modul 183, Applikationssicherheit implementieren, nachzuweisen. Es ist in die fünf Handlungsziele eingeteilt.
 
 ## Handlungsziel 1
-Mein Artefakt zeigt die drei primären Schutzziele Vertraulichkeit, Integrität und Verfügbarkeit, sowie die Beurteilung des Risikos.
+Die drei primären Schutzziele sind Vertraulichkeit, Integrität und Verfügbarkeit. Vertaulichkeit ist, dass nur die Personen Zugriff haben, die ihn auch haben sollten, Integrität die Korrektheit der Daten und Verfügbarkeit, dass die Daten abrufbar sind.
+
+Risiko beurteilen | Kleiner Schaden | Grosser Schaden
+---|---|---
+Hohe Eintrittswahrscheinlichkeit | Mittleres Risiko (reduzieren) | Grosses Risiko (vermeiden)
+Niedrige Eintrittswahrscheinlichkeit | Kleines Risiko (akzeptieren) | Mittleres Risiko (reduzieren)
 
 ## Handlungsziel 2
 Mein Artefakt, um das Erreichen des Handlungsziel 2 nachzuweisen, ist ein Code, der sich im Branch _HZ-2_ befindet.
