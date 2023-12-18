@@ -3,6 +3,7 @@ using M183.Data;
 using M183.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Web;
 
 namespace M183.Controllers
 {
@@ -77,8 +78,10 @@ namespace M183.Controllers
 
             var newNews = new News();
 
-            newNews.Header = request.Header;
-            newNews.Detail = request.Detail;
+            // Escaping XSS at create
+            newNews.Header = HttpUtility.HtmlEncode(request.Header);
+            newNews.Detail = HttpUtility.HtmlEncode(request.Detail);
+
             newNews.AuthorId = request.AuthorId;
             newNews.PostedDate = DateTime.UtcNow;
             newNews.IsAdminNews = request.IsAdminNews;
@@ -110,9 +113,11 @@ namespace M183.Controllers
             {
                 return NotFound(string.Format("News {0} not found", id));
             }
-            
-            news.Header = request.Header;
-            news.Detail = request.Detail;
+
+            // Escaping XSS at update
+            news.Header = HttpUtility.HtmlEncode(request.Header);
+            news.Detail = HttpUtility.HtmlEncode(request.Detail);
+
             news.AuthorId = request.AuthorId;
             news.IsAdminNews = request.IsAdminNews;
 
