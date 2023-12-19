@@ -2,6 +2,7 @@
 using M183.Controllers.Helper;
 using M183.Data;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.RegularExpressions;
 
 namespace M183.Controllers
 {
@@ -30,7 +31,7 @@ namespace M183.Controllers
         {
             if (request == null)
             {
-                return BadRequest();
+                return BadRequest("No request body");
             }
 
             var user = _context.Users.Find(request.UserId);
@@ -38,13 +39,61 @@ namespace M183.Controllers
             {
                 return NotFound(string.Format("User {0} not found", request.UserId));
             }
+
+            if (user.Password != MD5Helper.ComputeMD5Hash(request.OldPassword))
+            {
+                return Unauthorized("Old password wrong");
+            }
+
+            string passwordValidation = validateNewPasswort(request.NewPassword);
+            if (passwordValidation != "")
+            {
+                return BadRequest(passwordValidation);
+            }
+
             user.IsAdmin = request.IsAdmin;
             user.Password = MD5Helper.ComputeMD5Hash(request.NewPassword);
 
             _context.Users.Update(user);
             _context.SaveChanges();
 
-            return Ok();
+            return Ok("success");
+        }
+
+        private string validateNewPasswort(string newPassword)
+        {
+            // Check small letter.
+            string patternSmall = "[a-zäöü]";
+            Regex regexSmall = new Regex(patternSmall);
+            bool hasSmallLetter = regexSmall.Match(newPassword).Success;
+
+            string patternCapital = "[A-ZÄÖÜ]";
+            Regex regexCapital = new Regex(patternCapital);
+            bool hasCapitalLetter = regexCapital.Match(newPassword).Success;
+
+            string patternNumber = "[0-9]";
+            Regex regexNumber = new Regex(patternNumber);
+            bool hasNumber = regexNumber.Match(newPassword).Success;
+
+            List<string> result = new List<string>();
+            if (!hasSmallLetter)
+            {
+                result.Add("keinen Kleinbuchstaben");
+            }
+            if (!hasCapitalLetter)
+            {
+                result.Add("keinen Grossbuchstaben");
+            }
+            if (!hasNumber)
+            {
+                result.Add("keine Zahl");
+            }
+
+            if (result.Count > 0)
+            {
+                return "Das Passwort beinhaltet " + string.Join(", ", result);
+            }
+            return "";
         }
     }
 }

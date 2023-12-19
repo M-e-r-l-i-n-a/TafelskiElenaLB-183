@@ -1,4 +1,5 @@
 ﻿function onPasswordChange() {
+    var inputOldPassword = document.getElementById('oldPassword');
     var inputPassword = document.getElementById('password');
     var inputConfirmPassword = document.getElementById('confirmPassword');
 
@@ -17,12 +18,18 @@
             },
             body: JSON.stringify({
                 UserId: getUserid(),
+                OldPassword: inputOldPassword.value,
                 NewPassword: inputPassword.value,
                 isAdmin: isAdmin()
             })
         })
             .then((response) => {
-                if (response.ok) {
+                if (response.status < 500) {
+                    return response.json();
+                }
+            })
+            .then((data) => {
+                if (data == 'success') {
                     toastr.success(
                         'Password changed',
                         'Success',
@@ -36,11 +43,11 @@
                     )
                 }
                 else {
-                    toastr.error('Password change failed', 'Error');
+                    toastr.warning(data, 'Warnung');
                 }
             })
             .catch((error) => {
-                alert(error);
+                toastr.error('Unauthorized or not found', 'Error');
             });
     }
 }
@@ -54,6 +61,19 @@ function createChangePasswordForm() {
     main.innerHTML = '';
     main.appendChild(mainTitle);
 
+    /* Old Password. */
+    var labelOldPassword = document.createElement('label');
+    labelOldPassword.innerText = 'Old password';
+
+    var inputOldPassword = document.createElement('input');
+    inputOldPassword.id = 'oldPassword';
+    inputOldPassword.type = 'password';
+
+    var divOldPassword = document.createElement('div');
+    divOldPassword.appendChild(labelOldPassword);
+    divOldPassword.innerHTML += '<br>';
+    divOldPassword.appendChild(inputOldPassword);
+
     /* Password. */
     var labelPassword = document.createElement('label');
     labelPassword.innerText = 'New password';
@@ -63,9 +83,23 @@ function createChangePasswordForm() {
     inputPassword.type = 'password';
 
     var divPassword = document.createElement('div');
+    divPassword.innerHTML += '<br>';
     divPassword.appendChild(labelPassword);
     divPassword.innerHTML += '<br>';
     divPassword.appendChild(inputPassword);
+
+    /* Help */
+    var helpElement = document.createElement('span');
+    var helpIcon = document.createElement('i');
+    var helpText = document.createElement('span');
+
+    helpElement.className = 'tooltip';
+    helpIcon.className = 'fas fa-question-circle';
+    helpText.className = 'tooltiptext';
+    helpText.innerText = 'Mindestens einen Klein- und einen Grossbuchstaben sowie eine Zahl';
+
+    helpElement.appendChild(helpIcon);
+    helpElement.appendChild(helpText);
 
     /* Confirm Password. */
     var labelConfirmPassword = document.createElement('label');
@@ -93,7 +127,9 @@ function createChangePasswordForm() {
     /* Login form. */
     var loginForm = document.createElement('form');
     loginForm.action = 'javascript:onPasswordChange()';
+    loginForm.appendChild(divOldPassword);
     loginForm.appendChild(divPassword);
+    loginForm.appendChild(helpElement);
     loginForm.appendChild(divConfirmPassword);
     loginForm.appendChild(divButton);
 
