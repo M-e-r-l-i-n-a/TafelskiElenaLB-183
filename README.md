@@ -206,6 +206,8 @@ Ich habe die Aspekte zwar bei der Implementation berücksichtigt, aber nicht bei
 **Informationen für Auditing und Logging generieren. Auswertungen und Alarme definieren und implementieren**
 
 ### Artefakt
+
+Warnungen und Informationen werden geloggt.
 ```
 [Route("api/[controller]")]
 [ApiController]
@@ -288,13 +290,12 @@ public class LoginController : ControllerBase
     }
 }
 ```
-Warnungen und Informationen werden jetzt geloggt.
 
 ### Erreichung Handlungsziel 5
-
+Informationen für Logging werden generiert, wenn eine Warnung oder Information ausgegeben wird.
 
 ### Kritische Beurteilung
-
+Ich habe das Autiting nicht umgesetzt.
 
 ## Selbsteinschätzung des Erreichungsgrades der Kompetenz des Moduls
 Ich fand es schwierig, die Kompetenzen nachzuweisen, da wir mit dem Beispielprojekt gearbeitet haben und alle mehr oder weniger dasselbe haben. Theoretisch verstehe ich die Dinge, die in diesem Modul behandelt wurden, aber bei der praktischen Umsetzung bin ich noch nicht so sicher.
