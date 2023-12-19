@@ -118,21 +118,183 @@ Nachdem es nicht geklappt hat, habe ich den Code aus der Lösung übernommen, es
 ## Handlungsziel 4
 **Sicherheitsrelevante Aspekte bei Entwurf, Implementierung und Inbetriebnahme berücksichtigen**
 
-## Artefakt
+### Artefakt
 
-### Erreichung Handlungsziel 3
+```
+[HttpPatch("password-update")]
+[ProducesResponseType(200)]
+[ProducesResponseType(400)]
+[ProducesResponseType(404)]
+public ActionResult PasswordUpdate(PasswordUpdateDto request)
+{
+    if (request == null)
+    {
+        return BadRequest("No request body");
+    }
 
+    var user = _context.Users.Find(request.UserId);
+    if (user == null)
+    {
+        return NotFound(string.Format("User {0} not found", request.UserId));
+    }
+
+    if (user.Password != MD5Helper.ComputeMD5Hash(request.OldPassword))
+    {
+        return Unauthorized("Old password wrong");
+    }
+
+    string passwordValidation = validateNewPasswort(request.NewPassword);
+    if (passwordValidation != "")
+    {
+        return BadRequest(passwordValidation);
+    }
+
+    user.IsAdmin = request.IsAdmin;
+    user.Password = MD5Helper.ComputeMD5Hash(request.NewPassword);
+
+    _context.Users.Update(user);
+    _context.SaveChanges();
+
+    return Ok("success");
+}
+
+private string validateNewPasswort(string newPassword)
+{
+    // Check small letter.
+    string patternSmall = "[a-zäöü]";
+    Regex regexSmall = new Regex(patternSmall);
+    bool hasSmallLetter = regexSmall.Match(newPassword).Success;
+
+    string patternCapital = "[A-ZÄÖÜ]";
+    Regex regexCapital = new Regex(patternCapital);
+    bool hasCapitalLetter = regexCapital.Match(newPassword).Success;
+
+    string patternNumber = "[0-9]";
+    Regex regexNumber = new Regex(patternNumber);
+    bool hasNumber = regexNumber.Match(newPassword).Success;
+
+    List<string> result = new List<string>();
+    if (!hasSmallLetter)
+    {
+        result.Add("keinen Kleinbuchstaben");
+    }
+    if (!hasCapitalLetter)
+    {
+        result.Add("keinen Grossbuchstaben");
+    }
+    if (!hasNumber)
+    {
+        result.Add("keine Zahl");
+    }
+
+    if (result.Count > 0)
+    {
+        return "Das Passwort beinhaltet " + string.Join(", ", result);
+    }
+    return "";
+}
+```
+In diesem Code wird zuerst noch mal das alte Passwort abgefragt und dann werden die neuen Passworter validiert. Die Passwörter müssen mindestens einen kleinen Buchstaben, einen grossen Buchstaben und eine Zahl beinhalten.
+
+### Erreichung Handlungsziel 4
+Ich habe den sicherheitsrelevanten Aspekt, dass man das alte Passwort nachmal eingaben muss und dass das neue Passwort Grossbuchstaben, Kleinbuchstaben und Zahlen beinhalten muss, in diesem Code berücksichtigt.
 
 ### Kritische Beurteilung
+Ich habe die Aspekte zwar bei der Implementation berücksichtigt, aber nicht bei dem Entwurf und der Inbetriebnahme. Ausserdem wäre es noch sinnvoll, wenn ein Sonderzeichen enthalten sein müsste und eine Mindestlänge des Passwortes von z.B. 8 Zeichen eingegeben werden müsste.
 
 ## Handlungsziel 5
 **Informationen für Auditing und Logging generieren. Auswertungen und Alarme definieren und implementieren**
 
-## Artefakt
+### Artefakt
+```
+[Route("api/[controller]")]
+[ApiController]
+public class LoginController : ControllerBase
+{
+    private readonly ILogger _logger;
+    private readonly NewsAppContext _context;
+    private readonly IConfiguration _configuration;
 
-### Erreichung Handlungsziel 3
+    public LoginController(ILogger<LoginController> logger, NewsAppContext context, IConfiguration configuration)
+    {
+        _logger = logger;
+        _context = context;
+        _configuration = configuration;
+    }
+
+    /// <summary>
+    /// Login a user using password and username
+    /// </summary>
+    /// <response code="200">Login successfull</response>
+    /// <response code="400">Bad request</response>
+    /// <response code="401">Login failed</response>
+    [HttpPost]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    public ActionResult<User> Login(LoginDto request)
+    {
+        if (request == null || request.Username.IsNullOrEmpty() || request.Password.IsNullOrEmpty())
+        {
+            return BadRequest();
+        }
+        string username = request.Username;
+        string passwordHash = MD5Helper.ComputeMD5Hash(request.Password);
+
+        User? user = _context.Users
+            .Where(u => u.Username == username)
+            .Where(u => u.Password == passwordHash)
+            .FirstOrDefault();
+
+        if (user == null)
+        {
+            _logger.LogWarning($"login failed for user '{request.Username}'");
+            return Unauthorized("login failed");
+        }
+
+        _logger.LogInformation($"login successful for user '{request.Username}'");
+        return Ok(CreateToken(user));
+    }
+
+    private string CreateToken(User user)
+    {
+        string issuer = _configuration.GetSection("Jwt:Issuer").Value!;
+        string audience = _configuration.GetSection("Jwt:Audience").Value!;
+
+        List<Claim> claims = new List<Claim> {
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
+                new Claim(ClaimTypes.Role,  (user.IsAdmin ? "admin" : "user"))
+        };
+
+        string base64Key = _configuration.GetSection("Jwt:Key").Value!;
+        SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Convert.FromBase64String(base64Key));
+
+        SigningCredentials credentials = new SigningCredentials(
+                securityKey,
+                SecurityAlgorithms.HmacSha512Signature);
+
+        JwtSecurityToken token = new JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
+            claims: claims,
+            notBefore: DateTime.Now,
+            expires: DateTime.Now.AddDays(1),
+            signingCredentials: credentials
+         );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+}
+```
+Warnungen und Informationen werden jetzt geloggt.
+
+### Erreichung Handlungsziel 5
 
 
 ### Kritische Beurteilung
 
+
 ## Selbsteinschätzung des Erreichungsgrades der Kompetenz des Moduls
+Ich fand es schwierig, die Kompetenzen nachzuweisen, da wir mit dem Beispielprojekt gearbeitet haben und alle mehr oder weniger dasselbe haben. Theoretisch verstehe ich die Dinge, die in diesem Modul behandelt wurden, aber bei der praktischen Umsetzung bin ich noch nicht so sicher.
