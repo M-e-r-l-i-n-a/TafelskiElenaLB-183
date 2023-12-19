@@ -35,16 +35,17 @@ In der Schweiz mit einer billigen Uhr herumzulaufen ist ein kleines Risiko und d
 In der Schweiz mit einer teuren Uhr oder in Mexico mit einer billigen Uhr herumzulaufen ist ein mittleres Risiko und sollte reduziert werden, indem man zum Beipiel in der Nacht nicht nach draussen geht. In Mexico eine mit einer teuren Uhr herumzulaufen sollte vermieden werden.
 
 ### Erreichung Handlungsziel 1
-Ich kann Bedrohungen den Schutzzielen zuordnen und das Risiko beurteilen.
+In meinem Artefakt habe ich die drei primären Schutzziele und das Beurteilen des Risikos erklärt und an Beispielen aufgezeigt. Ich kann nun Bedrohungen den Schutzzielen zuordnen und das Risiko beurteilen und somit ist "Aktuelle Bedrohungen erkennen und erläutern können." erfüllt. Den Teil "Aktuelle Informationen zum Thema (Erkennung und Gegenmassnahmen) beschaffen und mögliche Auswirkungen aufzeigen und erklären können." des Handlungsziels habe ich nicht behandelt, da man das ganz einfach googlen oder auf https://owasp.org/www-project-top-ten/ nachschauen kann.
 
 ## Handlungsziel 2
 **Sicherheitslücken und ihre Ursachen in einer Applikation erkennen können. Gegenmassnahmen vorschlagen und implementieren können.**
 
 Mein Artefakt, um das Erreichen des Handlungsziel 2 nachzuweisen, ist ein Code, der sich im Branch _HZ-2_ befindet.
 
-Um das Programm gegen SQL-Interpreter-Injection zu schützen, habe ich Escaping angwandt, so dass ```'``` durch ```/'``` ersetzt wird.                ```request.Username.Replace("'", "/'"),```
+Um das Programm gegen SQL-Interpreter-Injection zu schützen, habe ich im LoginController.cs Escaping angwandt, so dass ```'``` durch ```/'``` ersetzt wird.                ```request.Username.Replace("'", "/'"),```
+Das bewirkt, dass kritische Eingaben, wie zum Beispiel ```administrator '--```, keine unerwarteten Dinge tun. Wenn man diese Eingabe ohne Escaping tätigt, wird nur der Benutzername gelesen und das Passwort, was danach kommt einfach ignoriert und man ist angemeldet.
 
-Um das Progamm gegen Cross Site Scripting (XSS) zu schützen, habe ich sowohl beim Erstellen als auch Updaten der Artikel den Inhalt der Header und Details escaped, indem ich die kritischen Zeichen in die entsprechenden Zeichenfolgen habe umwandeln lassen.
+Um das Progamm gegen Cross Site Scripting (XSS) zu schützen, habe ich im NewsController.cs sowohl beim Erstellen als auch Updaten der Artikel den Inhalt der Header und Details escaped, indem ich die kritischen Zeichen in die entsprechenden Zeichenfolgen habe umwandeln lassen. Auch das ist dafür zuständig, dass Code, den ein User in ein normales eingabefeld schreibt, nicht als Code wahrgenommen wird.
 
 ```
 using System.Web;
@@ -59,10 +60,44 @@ news.Detail = HttpUtility.HtmlEncode(request.Detail);
 ```
 
 ### Erreichung Handlungsziel 2
-
+Ich kann Sicherheitslücken und ihre Ursachen in einer Applikation erkennen, indem ich ausprobiere und den Code genau studiere. Ich kann Massnahmen gegen SQL-Injection und XSS vorschlagen und wie man in den Artefakten sieht, auch implementieren.
 
 ## Handlungsziel 3
 **Mechanismen für die Authentifizierung und Autorisierung umsetzen können.**
+
+```
+private string CreateToken(User user)
+{
+    string issuer = _configuration.GetSection("Jwt:Issuer").Value!;
+    string audience = _configuration.GetSection("Jwt:Audience").Value!;
+
+    List<Claim> claims = new List<Claim> {
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
+            new Claim(ClaimTypes.Role,  (user.IsAdmin ? "admin" : "user"))
+    };
+
+    string base64Key = _configuration.GetSection("Jwt:Key").Value!;
+    SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Convert.FromBase64String(base64Key));
+
+    SigningCredentials credentials = new SigningCredentials(
+            securityKey,
+            SecurityAlgorithms.HmacSha512Signature);
+
+    JwtSecurityToken token = new JwtSecurityToken(
+        issuer: issuer,
+        audience: audience,
+        claims: claims,
+        notBefore: DateTime.Now,
+        expires: DateTime.Now.AddDays(1),
+        signingCredentials: credentials
+     );
+
+    return new JwtSecurityTokenHandler().WriteToken(token);
+}
+```
+Dieses Artefakt stammt aus dem Auftrag Broken Access Control. Es wird ein JWT Token erstellt, der zur Authentifizierung und Autorisierung verwendet wird. Es wird bei jedem Anmelden eine Session mit einzigartigem Token erstellt, der dann jedes Mal abgefragt wird, bevor man zum Beispiel etwas bearbeitet. Damit das geht, muss man zuerst das NuGet-Paket BCrypt.Net-next installieren.
 
 ## Handlungsziel 4
 **Sicherheitsrelevante Aspekte bei Entwurf, Implementierung und Inbetriebnahme berücksichtigen**
