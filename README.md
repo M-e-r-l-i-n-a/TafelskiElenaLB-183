@@ -295,7 +295,7 @@ public class LoginController : ControllerBase
 Informationen für Logging werden generiert, wenn eine Warnung oder Information ausgegeben wird.
 
 ### Kritische Beurteilung
-Ich habe das Autiting nicht umgesetzt.
+Ich habe das Auditing nicht umgesetzt.
 
 ## Selbsteinschätzung des Erreichungsgrades der Kompetenz des Moduls
-Ich fand es schwierig, die Kompetenzen nachzuweisen, da wir mit dem Beispielprojekt gearbeitet haben und alle mehr oder weniger dasselbe haben. Theoretisch verstehe ich die Dinge, die in diesem Modul behandelt wurden, aber bei der praktischen Umsetzung bin ich noch nicht so sicher.
+Ich fand es schwierig, die Kompetenzen nachzuweisen, da wir mit dem Beispielprojekt gearbeitet haben und alle mehr oder weniger dasselbe haben. Theoretisch verstehe ich das meiste, was in diesem Modul behandelt wurden, aber bei der praktischen Umsetzung bin ich noch nicht so sicher.
